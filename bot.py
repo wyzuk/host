@@ -2,11 +2,9 @@ import discord
 from discord.ext import commands
 import os, psutil, asyncio, shlex, shutil
 
-# --- 1. CONFIGURATION ---
-TOKEN = os.environ.get('TOKEN', '').strip() 
-MY_ID = 1042714088461877288 # Your User ID
+TOKEN = os.environ.get('TOKEN', '').strip()
+MY_ID = 1042714088461877288
 
-# Map all 25 Terminal Channels
 TERMINALS = {id: i+1 for i, id in enumerate([
     1464858173822472202, 1464858215224311809, 1464858281376874657, 1464858304550539315,
     1464858320236969984, 1464858336192364634, 1464858351958626576, 1464858374188306649,
@@ -18,10 +16,8 @@ TERMINALS = {id: i+1 for i, id in enumerate([
 ])}
 
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all(), help_command=None)
-active_procs = {} 
+active_procs = {}
 nano_sessions = {}
-
-# --- 2. MANAGEMENT & RQ COMMANDS ---
 
 @bot.command()
 async def jhlp(ctx):
@@ -82,14 +78,11 @@ async def nano(ctx, file: str):
     nano_sessions[ctx.channel.id] = file
     await ctx.send(f"📥 **Preparing `{file}`.** Send your code now.")
 
-# --- 3. CORE TERMINAL ENGINE ---
-
 @bot.event
 async def on_message(message):
     if message.author.bot: return
     cid = message.channel.id
 
-    # Handle Nano File Saving
     if cid in nano_sessions:
         t_num = TERMINALS.get(cid)
         if t_num:
@@ -111,7 +104,6 @@ async def on_message(message):
             args = shlex.split(message.content)
             if not args: return
             
-            # Internal Commands (Bypass Broken /bin/sh)
             if args[0] == "ls":
                 files = os.listdir(t_path)
                 await message.channel.send(f"📂 **T-{t_num} Files:** `" + "`, `".join(files) + "`")
@@ -124,7 +116,6 @@ async def on_message(message):
                 else: shutil.rmtree(target)
                 await message.channel.send(f"🗑️ Deleted `{args[1]}`")
             elif args[0] in ["python", "python3"]:
-                # Direct execution bypasses the system shell
                 proc = await asyncio.create_subprocess_exec(
                     "python3", *args[1:], 
                     stdout=asyncio.subprocess.PIPE, 
